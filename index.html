@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="cyber-green">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>WhatsApp Ultra — Offline Test</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --primary: #10b981; --bg-dark: #0b141a; --panel: #202c33; --my-msg: #005c4b; --other-msg: #202c33; --text: #e9edef; }
+  [data-theme="neon-purple"] { --primary: #a855f7; --my-msg: #4c1d95; }
+  * { box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+  body { margin: 0; background: var(--bg-dark); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+  
+  /* Шапка */
+  .header { background: var(--panel); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #2a3942; }
+  .header h3 { margin: 0; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+  .btn-settings { background: #fbbf24; color: #000; border: none; padding: 8px 16px; border-radius: 20px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px;}
+  
+  /* Чат */
+  .chat-box { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); background-blend-mode: overlay; }
+  .msg { padding: 8px 12px; border-radius: 8px; max-width: 80%; font-size: 14.5px; line-height: 1.4; position: relative; word-wrap: break-word; }
+  .msg.my { background: var(--my-msg); align-self: flex-end; border-top-right-radius: 0; }
+  .msg.others { background: var(--other-msg); align-self: flex-start; border-top-left-radius: 0; }
+  .msg-sender { font-size: 11px; color: var(--primary); font-weight: bold; margin-bottom: 4px; }
+  .msg-time { font-size: 10px; color: rgba(255,255,255,0.5); text-align: right; margin-top: 4px; float: right; margin-left: 10px; }
+
+  /* Модерация */
+  .mod-blink { animation: blinkRed 0.5s infinite alternate; }
+  @keyframes blinkRed { from { background-color: #ef4444; color: white; } to { background-color: inherit; } }
+  .mod-blur { filter: blur(5px); cursor: pointer; }
+  .mod-blur:hover { filter: blur(0); }
+
+  /* Поле ввода */
+  .input-bar { background: var(--panel); padding: 10px 16px; display: flex; gap: 10px; }
+  .input-bar input { flex: 1; background: #2a3942; border: none; padding: 12px 16px; border-radius: 20px; color: white; outline: none; font-size: 14px; }
+  .input-bar button { background: var(--primary); border: none; width: 44px; height: 44px; border-radius: 50%; color: white; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
+
+  /* Модальное окно */
+  .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; padding: 16px; z-index: 1000; }
+  .modal.active { display: flex; }
+  .modal-box { background: #111b21; border: 1px solid #2a3942; border-radius: 12px; padding: 20px; width: 100%; max-width: 400px; max-height: 90vh; overflow-y: auto; }
+  .modal-box h3 { margin: 0 0 16px; color: #fbbf24; font-size: 18px; text-align: center; }
+  .modal-box label { display: block; font-size: 13px; color: #8696a0; margin: 12px 0 6px; }
+  .modal-box textarea, .modal-box select { width: 100%; padding: 10px; background: #2a3942; border: 1px solid #3b4a54; color: white; border-radius: 6px; outline: none; }
+  .modal-box textarea { resize: vertical; min-height: 80px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .modal-actions button { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; }
+  .btn-close { background: #3b4a54; color: white; }
+  .btn-save { background: #10b981; color: white; }
+</style>
+</head>
+<body>
+
+<!-- Шапка с кнопкой настроек -->
+<div class="header">
+  <h3><i class="fa-brands fa-whatsapp" style="color:var(--primary)"></i> Общий чат</h3>
+  <button class="btn-settings" onclick="document.getElementById('adminModal').classList.add('active')">
+    <i class="fa-solid fa-gear"></i> НАСТРОЙКИ
+  </button>
+</div>
+
+<!-- Чат -->
+<div class="chat-box" id="chatBox">
+  <div class="msg others">
+    <div class="msg-sender">Система</div>
+    <div>Привет! Это локальная тестовая версия. Нажми на кнопку "НАСТРОЙКИ" сверху, чтобы проверить модерацию.</div>
+  </div>
+</div>
+
+<!-- Ввод -->
+<div class="input-bar">
+  <input type="text" id="msgInput" placeholder="Введите сообщение..." onkeydown="if(event.key === 'Enter') sendMsg()">
+  <button onclick="sendMsg()"><i class="fa-solid fa-paper-plane"></i></button>
+</div>
+
+<!-- Админка -->
+<div class="modal" id="adminModal">
+  <div class="modal-box">
+    <h3><i class="fa-solid fa-user-shield"></i> Настройки</h3>
+    
+    <label>Запрещённые слова (каждое с новой строки)</label>
+    <textarea id="adminWords" placeholder="дурак&#10;мат&#10;идиот"></textarea>
+    
+    <label>Реакция на запрещённые слова</label>
+    <select id="adminAction">
+      <option value="blink">🔴 Мигание красным</option>
+      <option value="block">⛔ Блокировка (не отправится)</option>
+      <option value="blur">🔒 Размытие</option>
+      <option value="replace">⭐ Замена на ***</option>
+    </select>
+
+    <label>Тема оформления</label>
+    <select id="adminTheme">
+      <option value="cyber-green">Cyber Green</option>
+      <option value="neon-purple">Neon Purple</option>
+    </select>
+
+    <div class="modal-actions">
+      <button class="btn-close" onclick="document.getElementById('adminModal').classList.remove('active')">Закрыть</button>
+      <button class="btn-save" onclick="saveSettings()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Загрузка настроек
+  let settings = JSON.parse(localStorage.getItem('app_settings')) || { 
+    words: ['дурак', 'мат'], 
+    action: 'blink',
+    theme: 'cyber-green'
+  };
+
+  function init() {
+    document.getElementById('adminWords').value = settings.words.join('\n');
+    document.getElementById('adminAction').value = settings.action;
+    document.getElementById('adminTheme').value = settings.theme;
+    document.documentElement.setAttribute('data-theme', settings.theme);
+  }
+  init();
+
+  function saveSettings() {
+    settings.words = document.getElementById('adminWords').value.split('\n').map(w => w.trim().toLowerCase()).filter(w => w);
+    settings.action = document.getElementById('adminAction').value;
+    settings.theme = document.getElementById('adminTheme').value;
+    localStorage.setItem('app_settings', JSON.stringify(settings));
+    
+    document.documentElement.setAttribute('data-theme', settings.theme);
+    document.getElementById('adminModal').classList.remove('active');
+    
+    // Перерисовываем сообщения (чтобы применить новые правила)
+    renderMessages();
+  }
+
+  // Массив сообщений (сохраняем в память браузера)
+  let messages = JSON.parse(localStorage.getItem('app_messages')) || [];
+
+  function sendMsg() {
+    const input = document.getElementById('msgInput');
+    const text = input.value.trim();
+    if (!text) return;
+
+    // Проверка на блокировку
+    if (settings.action === 'block') {
+      for (let w of settings.words) {
+        if (text.toLowerCase().includes(w)) {
+          alert('Сообщение заблокировано! Оно содержит запрещенное слово.');
+          input.value = '';
+          return;
+        }
+      }
+    }
+
+    messages.push({ 
+      text: text, 
+      sender: 'Вы', 
+      time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
+      isMe: true
+    });
+    
+    localStorage.setItem('app_messages', JSON.stringify(messages));
+    input.value = '';
+    renderMessages();
+  }
+
+  function renderMessages() {
+    const box = document.getElementById('chatBox');
+    // Оставляем системное сообщение
+    box.innerHTML = `
+      <div class="msg others">
+        <div class="msg-sender">Система</div>
+        <div>Привет! Это локальная тестовая версия. Нажми на кнопку "НАСТРОЙКИ" сверху, чтобы проверить модерацию.</div>
+      </div>
+    `;
+
+    messages.forEach(m => {
+      let displayText = m.text;
+      let modClass = '';
+      
+      // Применяем правила
+      settings.words.forEach(w => {
+        if (m.text.toLowerCase().includes(w)) {
+          if (settings.action === 'replace') displayText = displayText.replace(new RegExp(w, 'gi'), '***');
+          if (settings.action === 'blink') modClass = 'mod-blink';
+          if (settings.action === 'blur') modClass = 'mod-blur';
+        }
+      });
+
+      const div = document.createElement('div');
+      div.className = `msg ${m.isMe ? 'my' : 'others'} ${modClass}`;
+      div.innerHTML = `
+        ${!m.isMe ? `<div class="msg-sender">${m.sender}</div>` : ''}
+        <div class="msg-text">${displayText}</div>
+        <div class="msg-time">${m.time}</div>
+      `;
+
+      // Если размыто - по клику показываем
+      if (modClass === 'mod-blur') {
+        div.onclick = () => { 
+          div.classList.remove('mod-blur'); 
+          div.querySelector('.msg-text').textContent = m.text; 
+        };
+      }
+
+      box.appendChild(div);
+    });
+    
+    box.scrollTop = box.scrollHeight;
+  }
+
+  // Первичная отрисовка
+  renderMessages();
+</script>
+</body>
+</html>
